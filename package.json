@@ -1,0 +1,15 @@
+{
+  "name": "mood-tracker-db",
+  "version": "1.0.0",
+  "private": true,
+  "description": "基于 Node.js 与 MySQL 8.0 的全栈心情记录系统",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "db:init": "node scripts/init-db.js"
+  },
+  "engines": {
+    "node": ">=16.20.0"
+  }
+}
+

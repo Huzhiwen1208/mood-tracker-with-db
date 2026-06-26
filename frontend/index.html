@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>情绪档案馆</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="orb orb-left"></div>
+  <div class="orb orb-right"></div>
+
+  <main class="shell">
+    <section class="hero card">
+      <p class="eyebrow">Mood Tracker Database Edition</p>
+      <div class="hero-row">
+        <div>
+          <h1>情绪档案馆</h1>
+          <p class="hero-copy">
+            在一个页面里完成注册、登录、发布、撤销和用户管理。
+            所有数据统一落到 MySQL 8.0，所有访问统一通过 localhost:9090。
+          </p>
+        </div>
+        <div class="hero-badge">
+          <span>全栈</span>
+          <span>MySQL 8.0</span>
+          <span>JWT-free Session</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <aside class="card sidebar">
+        <div class="card-title-row">
+          <h2>账户中心</h2>
+          <span class="pill" id="authModeBadge">登录</span>
+        </div>
+
+        <div id="authGuest">
+          <div class="segmented">
+            <button type="button" class="segment is-active" data-mode="login">登录</button>
+            <button type="button" class="segment" data-mode="register">注册</button>
+          </div>
+
+          <form id="authForm" class="stacked-form">
+            <label>
+              <span>账号</span>
+              <input id="authAccount" name="account" type="text" maxlength="24" placeholder="例如 jackhu" />
+            </label>
+
+            <label id="nicknameWrap" class="hidden">
+              <span>昵称</span>
+              <input id="authNickname" name="nickname" type="text" maxlength="20" placeholder="用于展示的名字" />
+            </label>
+
+            <label>
+              <span>密码</span>
+              <input id="authPassword" name="password" type="password" maxlength="72" placeholder="至少 8 位" />
+            </label>
+
+            <button class="primary-btn" type="submit" id="authSubmit">登录</button>
+          </form>
+
+          <div class="info-block">
+            <p class="info-title">调试用默认管理员</p>
+            <p class="info-text">账号 `admin`</p>
+            <p class="info-text">密码 `Admin123!@#`</p>
+          </div>
+        </div>
+
+        <div id="authAuthed" class="hidden profile-panel">
+          <div class="profile-top">
+            <div>
+              <p class="profile-name" id="profileName">-</p>
+              <p class="profile-meta" id="profileMeta">-</p>
+            </div>
+            <span class="pill" id="profileRole">user</span>
+          </div>
+          <p class="profile-note">
+            登录后可发布和撤销自己的心情记录；管理员还能维护系统用户。
+          </p>
+          <button class="secondary-btn" type="button" id="logoutButton">退出登录</button>
+        </div>
+
+        <p class="inline-status" id="authStatus"></p>
+      </aside>
+
+      <section class="card composer">
+        <div class="card-title-row">
+          <h2>发布心情</h2>
+          <div class="title-metrics">
+            <span class="pill pill-soft" id="composerState">游客模式</span>
+            <span class="pill" id="moodCounter">0 / 300</span>
+          </div>
+        </div>
+
+        <div class="mood-types" id="moodTypes"></div>
+
+        <form id="moodForm" class="stacked-form">
+          <label>
+            <span>内容</span>
+            <textarea id="moodContent" maxlength="300" placeholder="今天发生了什么？写下来，给此刻留个坐标。"></textarea>
+          </label>
+          <div class="composer-footer">
+            <p class="helper-text" id="moodHint">登录后即可发布新心情。</p>
+            <div class="action-row">
+              <button class="ghost-btn ghost-btn-small" id="clearMoodButton" type="button">清空</button>
+              <button class="primary-btn" id="moodSubmit" type="submit">发布</button>
+            </div>
+          </div>
+        </form>
+        <p class="inline-status" id="moodStatus"></p>
+      </section>
+    </section>
+
+    <section class="card timeline-card">
+      <div class="card-title-row">
+        <h2>心情时间线</h2>
+        <button class="ghost-btn" id="refreshButton" type="button">刷新</button>
+      </div>
+      <div class="timeline-toolbar">
+        <div class="timeline-stats" id="timelineStats"></div>
+        <div class="timeline-filters">
+          <button type="button" class="filter-btn is-active" data-filter="all">全部记录</button>
+          <button type="button" class="filter-btn" data-filter="mine">只看我的</button>
+        </div>
+      </div>
+      <p class="timeline-meta" id="timelineMeta">等待同步</p>
+      <div id="timeline" class="timeline"></div>
+    </section>
+
+    <section class="card admin-card hidden" id="adminPanel">
+      <div class="card-title-row">
+        <h2>管理员用户管理</h2>
+        <div class="title-metrics">
+          <span class="pill pill-warm">仅管理员可见</span>
+          <span class="pill" id="userCountBadge">0 位用户</span>
+        </div>
+      </div>
+
+      <form id="adminCreateForm" class="admin-form">
+        <label>
+          <span>账号</span>
+          <input id="adminAccount" type="text" maxlength="24" placeholder="新用户账号" />
+        </label>
+        <label>
+          <span>昵称</span>
+          <input id="adminNickname" type="text" maxlength="20" placeholder="新用户昵称" />
+        </label>
+        <label>
+          <span>密码</span>
+          <input id="adminPassword" type="password" maxlength="72" placeholder="初始密码" />
+        </label>
+        <label>
+          <span>角色</span>
+          <select id="adminRole">
+            <option value="user">普通用户</option>
+            <option value="admin">管理员</option>
+          </select>
+        </label>
+        <button class="primary-btn" type="submit">新增用户</button>
+      </form>
+
+      <p class="inline-status" id="adminStatus"></p>
+      <div id="userList" class="user-list"></div>
+    </section>
+  </main>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
