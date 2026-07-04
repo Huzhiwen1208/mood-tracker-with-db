@@ -192,7 +192,10 @@ async function revokeSessionsByUserId(userId) {
   `);
 }
 
-async function listPublishedMoods() {
+async function listPublishedMoods(options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit || 100), 1), 5000);
+  const userFilter = options.userId ? `AND m.user_id = ${escapeSqlValue(options.userId)}` : '';
+
   const sql = `
     SELECT COALESCE(
       JSON_ARRAYAGG(
@@ -224,8 +227,9 @@ async function listPublishedMoods() {
       FROM moods m
       JOIN users u ON u.id = m.user_id
       WHERE m.status = 'published' AND u.is_active = 1
+        ${userFilter}
       ORDER BY m.published_at DESC, m.id DESC
-      LIMIT 100
+      LIMIT ${escapeSqlValue(limit)}
     ) AS mood_rows;
   `;
 

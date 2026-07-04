@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "test:client": "node scripts/test-client-flow.js"
   },
   "engines": {
     "node": ">=16.20.0"
   }
 }
-

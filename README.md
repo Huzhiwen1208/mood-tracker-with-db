@@ -1,179 +1,112 @@
-# Mood Tracker DB
+# ReAgentOS
 
-一个运行在 MacOS 上的全栈心情记录系统，根目录固定为 `/Users/jackhu/src_code/mood-tracker-db`，统一通过 `http://localhost:9090` 提供页面和接口服务。
+## 项目介绍
 
-## 功能概览
+可重置智能体操作系统聚焦智能体快速重置的核心挑战，从“0到1”构建语义感知的操作系统框架，实现内核的语义感知与回滚机制，全面支撑端侧产品的 AI 智能体应用。
 
-- 用户注册：账号、密码、昵称注册，密码使用 Node.js `crypto.scrypt` 加密后存储
-- 用户登录与登出：基于服务端 Session 表 + HttpOnly Cookie 维持登录态
-- 心情发布：支持心情类型、内容、发布时间记录
-- 心情撤销：已登录用户只能撤销自己发布且仍处于已发布状态的心情
-- 管理员用户管理：管理员可新增系统用户、删除系统用户
-- 响应式网页：注册、登录、心情发布、撤销、用户管理全部在网页端完成
-- 更完整交互：字符计数、加载态、禁用态、Toast 提示、时间线筛选与统计
+## 关键技术亮点
 
-## 项目结构
+- 从“系统级回滚”到“语义级回滚”的跨越式创新，突破传统操作系统的局限，赋予智能体更高的自适应与可恢复能力。
 
-```text
-mood-tracker-db
-├── backend
-│   ├── config.js        # 配置读取
-│   ├── db.js            # MySQL 命令行访问层
-│   ├── security.js      # 密码加密与 Session Token
-│   ├── services.js      # 业务逻辑
-│   └── server.js        # HTTP 服务，统一对外暴露 9090
-├── frontend
-│   ├── index.html       # 页面结构
-│   ├── styles.css       # 响应式样式
-│   └── app.js           # 前端交互逻辑
-├── scripts
-│   └── init-db.js       # 初始化数据库与默认管理员
-├── sql
-│   └── init.sql         # 建库建表脚本
-├── .env.example         # 环境变量示例
-├── package.json
-└── README.md
-```
+## 宏观架构
 
-## 数据库设计
+1. Localstate：本机状态变化管理，建议通过一个本地的 MCP-server 进行管理
+2. Restful 语义感知模型（真实世界模型）：与真实世界（远端APP）互动，负责真实世界的状态管理。远程APP+本地业务==>远程的 MCP-server 管理（幂等 + 可逆 + 拦截）
+3. 语义元数据（语义标签）：实现 undo 回撤的基础，记录每个操作的语义标签，用于后续的回撤操作。
 
-### `users`
+## 语义划分
+1. 可撤销语义操作：使用语义标签 undo 即可
+2. 不可撤销语义操作。
+   1. 危险操作：支付场景、删除操作等
+   2. 非危险操作。
+      1. 可通过 backup 变为可撤销语义操作
+      2. 不可通过 backup 回撤
 
-- `account`: 唯一账号
-- `password_hash`: 加密密码
-- `nickname`: 昵称
-- `role`: `admin` / `user`
-- `is_active`: 软删除标记
+# Demonstration
+## 运行要求
 
-### `moods`
+推荐方案只要求：
 
-- `user_id`: 发布者 ID
-- `mood_type`: 心情类型
-- `content`: 心情内容
-- `status`: `published` / `revoked`
-- `published_at`: 发布时间
-- `revoked_at`: 撤销时间
+- Docker Desktop 或 Docker Engine
+- Docker Compose v2
 
-### `sessions`
+如果你要在宿主机直接跑 Node.js，再额外需要：
 
-- `user_id`: 登录用户
-- `token_hash`: Session Token 哈希
-- `expires_at`: 过期时间
-- `revoked_at`: 登出或失效时间
-
-## 环境要求
-
-- MacOS
-- Node.js `>= 16.20`
+- Node.js `>= 16.20.0`
 - 本机可执行 `mysql` 命令
-- Docker 中运行的 MySQL 8.0 容器
-  - 容器 ID：`d59ce521836d0a9edfc4af5e5c07f8b4ec63e5d9f55de77cb98ab8341d67be4b`
-  - 默认 Root 密码：`123456`
-  - 默认映射端口：`3306`
 
-## 配置说明
+## 快速开始
 
-1. 复制配置模板：
+### 1. 准备环境变量
 
 ```bash
-cd /Users/jackhu/src_code/mood-tracker-db
 cp .env.example .env
 ```
 
-2. 默认配置已经对接当前 Docker MySQL 容器，可直接使用。常用变量如下：
+默认配置已经适配 `docker-compose.yml`：
 
 ```env
 APP_PORT=9090
-DB_MODE=host
-DB_HOST=127.0.0.1
+DB_MODE=tcp
+DB_HOST=mysql
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=123456
 DB_NAME=mood_tracker_app
-DB_CONTAINER_ID=d59ce521836d0a9edfc4af5e5c07f8b4ec63e5d9f55de77cb98ab8341d67be4b
+DB_CONNECT_RETRIES=30
+DB_CONNECT_RETRY_DELAY_MS=2000
 
 ADMIN_ACCOUNT=admin
 ADMIN_PASSWORD=Admin123!@#
 ADMIN_NICKNAME=系统管理员
 ```
 
-说明：
+常见可调整项：
 
-- `DB_MODE=host`：通过宿主机 `127.0.0.1:3306` 访问 MySQL
-- `DB_MODE=docker-exec`：通过 `docker exec` 在容器内执行 MySQL 命令，适合某些受限环境
+- `APP_PORT`：宿主机访问端口
+- `DB_PASSWORD`：MySQL Root 密码，同时也是应用连接密码
+- `DB_NAME`：业务数据库名
+- `DB_PORT_FORWARD`：宿主机访问 MySQL 的映射端口，默认 `3307`
+- `ADMIN_ACCOUNT` / `ADMIN_PASSWORD`：默认管理员账号
 
-## 初始化与启动
-
-### 1. 初始化数据库
-
-```bash
-cd /Users/jackhu/src_code/mood-tracker-db
-npm run db:init
-```
-
-该命令会自动：
-
-- 创建 `mood_tracker_app` 数据库
-- 创建 `users`、`moods`、`sessions` 三张表
-- 如果默认管理员不存在，则自动创建
-
-### 2. 启动服务
+### 2. 启动完整环境
 
 ```bash
-cd /Users/jackhu/src_code/mood-tracker-db
-npm start
+docker compose up --build -d
 ```
 
-启动成功后访问：
+首次启动会自动完成：
 
-```text
-http://localhost:9090
+- MySQL 容器启动
+- 应用容器构建和启动
+- 数据库建库建表
+- 默认管理员创建
+
+访问地址：
+
+- 首页：`http://localhost:9090`
+- 独立客户端：`http://localhost:9090/client/`
+
+### 3. 查看状态
+
+```bash
+docker compose ps
+docker compose logs -f app
 ```
 
-## 默认管理员
+### 4. 停止环境
 
-- 账号：`admin`
-- 密码：`Admin123!@#`
+```bash
+docker compose down
+```
 
-首次进入网页后可用该管理员账号登录，并测试用户新增/删除流程。
+如果需要连同数据库数据一起清空：
 
-## 使用说明
+```bash
+docker compose down -v
+```
+# TODO LIST
 
-### 普通用户
-
-1. 在网页中注册账号，系统会自动登录
-2. 选择心情类型并填写内容后发布
-3. 在时间线中可撤销自己发布的心情
-
-### 管理员
-
-1. 使用管理员账号登录
-2. 在“管理员用户管理”区域中新增普通用户或管理员
-3. 可删除非当前登录的其他系统用户
-
-## 接口一览
-
-- `GET /api/health`
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `GET /api/moods`
-- `POST /api/moods`
-- `DELETE /api/moods/:id`
-- `GET /api/admin/users`
-- `POST /api/admin/users`
-- `DELETE /api/admin/users/:id`
-
-## 稳定性设计
-
-- 输入校验：账号、密码、昵称、心情内容均有长度与格式校验
-- 异常处理：后端统一返回 JSON 错误信息
-- 登录保护：发布、撤销、用户管理接口均要求登录
-- 权限控制：管理员接口仅 `role=admin` 可用
-- 软删除：删除用户不会直接物理删除，便于减少误操作风险
-
-## 备注
-
-- 项目未依赖第三方 npm 包，便于在受限网络环境中直接运行
-- 所有可访问页面与接口都由同一个 Node 服务从 `localhost:9090` 对外提供
+1. 核心TODO：参考 cli-anything（代码+论文），进一步得出：业务+APP=>MCP 的数学化，形式化方法论
+2. 总结demo路径：通过简单的demo（麻雀虽小，五脏俱全）==> 总结出一套意图识别、Restful远程化MCP、本地化MCP的方法论==> 通过复杂系统验证 ==> 暴露出不足和需要改进的点 ==> 问题解决方案+展望
+3. 整体需要数学化一些：比如实体关系图、状态机、状态转换函数、spec 等

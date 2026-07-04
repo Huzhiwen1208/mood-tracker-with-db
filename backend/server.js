@@ -43,6 +43,14 @@ function sendJson(res, statusCode, payload) {
   res.end(body);
 }
 
+function redirect(res, location) {
+  res.writeHead(302, {
+    Location: location,
+    'Cache-Control': 'no-store',
+  });
+  res.end();
+}
+
 function parseCookies(req) {
   const header = req.headers.cookie;
   if (!header) {
@@ -211,11 +219,12 @@ function requireAdmin(context) {
   }
 }
 
-async function serveStatic(req, res, pathname) {
+async function serveStatic(req, res, pathname, rootDir = config.frontendDir) {
   const relativePath = pathname === '/' ? '/index.html' : pathname;
-  const candidatePath = path.normalize(path.join(config.frontendDir, relativePath));
+  const staticRoot = path.resolve(rootDir);
+  const candidatePath = path.normalize(path.join(staticRoot, relativePath));
 
-  if (!candidatePath.startsWith(config.frontendDir)) {
+  if (candidatePath !== staticRoot && !candidatePath.startsWith(`${staticRoot}${path.sep}`)) {
     sendJson(res, 403, { message: '禁止访问该资源。' });
     return;
   }
@@ -228,7 +237,7 @@ async function serveStatic(req, res, pathname) {
     }
   } catch (error) {
     if (!path.extname(filePath)) {
-      filePath = path.join(config.frontendDir, 'index.html');
+      filePath = path.join(staticRoot, 'index.html');
     }
   }
 
@@ -336,6 +345,16 @@ async function handleApi(req, res, pathname) {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/client/moods') {
+    requireAuth(context);
+    const moods = await listPublishedMoods({
+      userId: context.user.id,
+      limit: 5000,
+    });
+    sendJson(res, 200, { moods });
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/api/moods') {
     requireAuth(context);
     const body = await readJsonBody(req);
@@ -428,6 +447,17 @@ async function requestHandler(req, res) {
       return;
     }
 
+    if (pathname === '/client') {
+      redirect(res, '/client/');
+      return;
+    }
+
+    if (pathname.startsWith('/client/')) {
+      const clientPath = pathname.slice('/client'.length) || '/';
+      await serveStatic(req, res, clientPath, config.clientDir);
+      return;
+    }
+
     await serveStatic(req, res, pathname);
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -450,4 +480,3 @@ start().catch((error) => {
   console.error('启动失败:', error.message);
   process.exit(1);
 });
-

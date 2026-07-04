@@ -93,6 +93,12 @@ function runSql(sql, options = {}) {
   });
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 function parseLastJson(output) {
   if (!output) {
     return null;
@@ -121,6 +127,26 @@ async function queryArrayJson(sql, options) {
 }
 
 async function initializeSchema() {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= config.db.connectRetries; attempt += 1) {
+    try {
+      await runSql('SELECT 1;', { database: null });
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt === config.db.connectRetries) {
+        throw error;
+      }
+      await sleep(config.db.connectRetryDelayMs);
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
   const rawSql = await fs.readFile(path.join(config.sqlDir, 'init.sql'), 'utf8');
   const sql = rawSql.replace(/mood_tracker_app/g, config.db.database);
   await runSql(sql, { database: null });

@@ -2,4 +2,7 @@
 .env
 node_modules/
 *.log
-
+.venv/
+agent-harness/.venv/
+.pytest_cache/
+__pycache__/

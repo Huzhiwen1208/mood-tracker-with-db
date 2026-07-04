@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>心情管理客户端</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Mood Tracker Client</p>
+        <h1>心情管理客户端</h1>
+        <p class="topbar-copy">对接本地原应用账号、心情提交与撤销能力，沉淀个人长期情绪档案。</p>
+      </div>
+      <div class="sync-panel">
+        <span class="status-dot" id="serviceDot"></span>
+        <div>
+          <p class="sync-title" id="serviceStatus">检查服务中</p>
+          <p class="sync-meta" id="syncMeta">尚未同步</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="layout">
+      <aside class="panel account-panel">
+        <div class="panel-title">
+          <div>
+            <p class="section-kicker">Account</p>
+            <h2>账户与登录态</h2>
+          </div>
+          <span class="chip" id="authBadge">未登录</span>
+        </div>
+
+        <div id="guestAuth">
+          <div class="segmented" role="tablist" aria-label="账号操作">
+            <button class="segment is-active" type="button" data-auth-mode="login">登录</button>
+            <button class="segment" type="button" data-auth-mode="register">注册</button>
+          </div>
+
+          <form class="form-stack" id="authForm">
+            <label>
+              <span>账号</span>
+              <input id="authAccount" type="text" autocomplete="username" maxlength="24" placeholder="例如 jackhu" />
+            </label>
+            <label class="hidden" id="nicknameField">
+              <span>昵称</span>
+              <input id="authNickname" type="text" maxlength="20" placeholder="展示在时间线上的名字" />
+            </label>
+            <label>
+              <span>密码</span>
+              <input id="authPassword" type="password" autocomplete="current-password" maxlength="72" placeholder="至少 8 位" />
+            </label>
+            <button class="primary-btn" id="authSubmit" type="submit">登录</button>
+          </form>
+        </div>
+
+        <div class="profile hidden" id="profilePanel">
+          <div class="profile-main">
+            <div class="avatar" id="profileAvatar">心</div>
+            <div>
+              <p class="profile-name" id="profileName">-</p>
+              <p class="profile-meta" id="profileMeta">-</p>
+            </div>
+          </div>
+          <button class="secondary-btn" id="logoutButton" type="button">退出登录</button>
+        </div>
+
+        <p class="inline-status" id="authStatus"></p>
+      </aside>
+
+      <section class="panel composer-panel">
+        <div class="panel-title">
+          <div>
+            <p class="section-kicker">Record</p>
+            <h2 id="composerTitle">新增心情记录</h2>
+          </div>
+          <span class="chip" id="recordModeChip">实时同步</span>
+        </div>
+
+        <form class="mood-form" id="moodForm">
+          <div class="field-grid">
+            <label>
+              <span>情绪类型</span>
+              <div class="segmented category-segments" id="categorySegments"></div>
+            </label>
+            <label>
+              <span>发生时间</span>
+              <input id="occurredAt" type="datetime-local" />
+            </label>
+          </div>
+
+          <label>
+            <span>情绪标签</span>
+            <div class="tag-grid" id="tagGrid"></div>
+          </label>
+
+          <label>
+            <span>自定义标签</span>
+            <input id="customTag" type="text" maxlength="16" placeholder="例如 松弛、委屈、专注" />
+          </label>
+
+          <label>
+            <span>情绪描述</span>
+            <textarea id="description" maxlength="180" placeholder="记录触发事件、身体感受或当下想法。"></textarea>
+          </label>
+
+          <div class="form-footer">
+            <p class="helper-text" id="descriptionCounter">0 / 180</p>
+            <div class="button-row">
+              <button class="ghost-btn" id="cancelEditButton" type="button">取消编辑</button>
+              <button class="primary-btn" id="moodSubmit" type="submit">保存记录</button>
+            </div>
+          </div>
+        </form>
+        <p class="inline-status" id="moodStatus"></p>
+      </section>
+    </section>
+
+    <section class="dashboard-grid">
+      <section class="panel stats-panel">
+        <div class="panel-title">
+          <div>
+            <p class="section-kicker">Analytics</p>
+            <h2>多维度情绪统计</h2>
+          </div>
+          <button class="secondary-btn compact" id="refreshButton" type="button">刷新</button>
+        </div>
+
+        <div class="filters">
+          <div class="segmented period-segments" id="periodSegments">
+            <button class="segment" type="button" data-period="day">日</button>
+            <button class="segment is-active" type="button" data-period="week">周</button>
+            <button class="segment" type="button" data-period="month">月</button>
+          </div>
+          <input id="anchorDate" type="date" />
+        </div>
+
+        <div class="metric-grid" id="metricGrid"></div>
+        <div class="chart-grid">
+          <div>
+            <h3>占比变化</h3>
+            <div class="distribution" id="distributionChart"></div>
+          </div>
+          <div>
+            <h3>周期波动</h3>
+            <div class="trend" id="trendChart"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel report-panel">
+        <div class="panel-title">
+          <div>
+            <p class="section-kicker">Report</p>
+            <h2>情绪分析报告</h2>
+          </div>
+          <span class="chip" id="reportPeriod">本周</span>
+        </div>
+        <div class="report-body" id="reportBody"></div>
+      </section>
+    </section>
+
+    <section class="panel records-panel">
+      <div class="panel-title">
+        <div>
+          <p class="section-kicker">Timeline</p>
+          <h2>个人记录管理</h2>
+        </div>
+        <span class="chip" id="recordCount">0 条记录</span>
+      </div>
+      <div class="records" id="recordList"></div>
+    </section>
+  </main>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
